@@ -1,11 +1,9 @@
-import { Client, Message, TextChannel, GatewayIntentBits, CloseEvent } from "discord.js";
+import { Client, Message, GatewayIntentBits, CloseEvent } from "discord.js";
 import Command from "./Command";
 import CommandError from "./CommandError";
-import Context from "./Context";
-import { readdirSync } from "fs";
-import { hasDuplicates } from "./util";
+import Context from "./Context"
 import Log from "./Log";
-import { resolve } from "path";
+import { ArgArray } from "./ArgType";
 
 export default class Bot {
 	public client: Client = new Client({ intents: [
@@ -15,13 +13,13 @@ export default class Bot {
 		GatewayIntentBits.GuildMessageReactions,
 		GatewayIntentBits.DirectMessages
 	] });
-	public commands: Command[];
+	public baseCommand: Command;
 	private readonly log: Log = new Log("bot");
-	private auth: { token: string };
+	public config: { token: string, prefix: string };
 
 	loadFiles(): this {
 		try {
-			this.auth = require("../auth.json");
+			this.config = require("../config.json");
 			return this;
 		} catch (e) {
 			this.log.fatal(`Could not load auth data (${e.name}: ${e.message})`);
@@ -31,7 +29,7 @@ export default class Bot {
 	
 	async login(): Promise<void> {
 		try {
-			await this.client.login(this.auth.token);
+			await this.client.login(this.config.token);
 			this.log.info(`${this.client.user.username} has successfully logged in`);
 			await new Promise(res => { this.client.on("ready", res); });
 		} catch (e) {
@@ -41,28 +39,43 @@ export default class Bot {
 	}
 	
 	async loadCommands(): Promise<this> {
-		const path: string = resolve(__dirname, "./commands");
-		this.commands = await Promise.all(readdirSync(path)
-			.filter(x => x.slice(-3) == ".ts")
-			.map(x => import(`${path}/${x}`))
-			.map(x => x.then(cmd => new cmd.default)));
-		this.commands.forEach(x => x.dirName = path);
-		if (hasDuplicates(this.commands.map(x => x.name))) {
-			this.log.fatal("Duplicate commands");
-			process.exit();
+		if (this.baseCommand) {
+			this.log.warn("Commands are already loaded");
+			return this;
 		}
-		try { await Promise.all(this.commands.filter(x => x.hasSubCommands).map(x => x.loadSubCommands())); }
+		this.baseCommand = new class extends Command<[]> {
+			override isBase = true;
+			override name = "";
+			override path = "";
+			override hasSubCommands = true;
+			override parent: Command = null;
+			override noArgError = false;
+			override mod = false;
+			override admin = false;
+			override args: ArgArray<[]> = [];
+
+			override async run(): Promise<void> { /* no command was run */ }
+			override async parseArgs(): Promise<[]> { return []; }
+		};
+		try { await this.baseCommand.loadSubCommands(); }
 		catch (e) {
-			this.log.fatal(e.message);
-			process.exit();
+			this.log.fatal("Could not load Mavis commands");
+			this.log.fatal(`${e.name}: ${e.message}`);
+			process.exit(0);
 		}
 		const count = (arr: Command[]): number => arr.reduce((acc, e) => acc + count(e.subCommands), 1);
-		this.log.info(`Loaded ${count(this.commands) - 1} commands`);
+		this.log.info(`Loaded ${this.getAllCommands().length} commands`);
 		return this;
 	}
-	
+
+	getAllCommands(): Command[] {
+		const flatten = (x: Command[]): Command[] => x.flatMap(c => c.hasSubCommands ? flatten(c.subCommands).concat(c) : c);
+		return flatten([this.baseCommand]).slice(0, -1);
+	}
+
 	setListeners(): this {
 		const onMessage = async (msg: Message): Promise<void> => {
+			if (msg.author.bot) { return; }
 			const ctx: Context = new Context(msg, this);
 			try { await ctx.parse(); }
 			catch (e) {

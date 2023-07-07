@@ -15,15 +15,13 @@ export default class Context {
 	async sendEmbed(embed: Partial<Embed>): Promise<Message> { return await this.msg.channel.send({ embeds: [embed] }); }
 	
 	async parse(): Promise<void> {
-		if (this.msg.channel.isDMBased() || this.msg.author.bot) { return; }
+		if (!this.msg.content.startsWith(this.bot.config.token)) { return; }
 		await this.runCommand();
 	}
 
 	async runCommand(): Promise<void> {
 		const args: string[] = this.msg.content.substring(1).split(/ +/);
-		if (this.msg.author.bot || args.length == 0 || !this.msg.content.startsWith("+")) { return; }
-		const name: string = args.shift();
-		await this.bot.commands.find(x => x.name == name)?.runWithRawArgs(args, this);
+		await this.bot.baseCommand.runWithRawArgs(args, this);
 	}
 	
 	async sendError(txt: string): Promise<void> {

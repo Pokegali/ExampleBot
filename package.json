@@ -1,6 +1,6 @@
 {
-  "name": "exampleBot",
-  "version": "1.0.0",
+  "name": "example-bot",
+  "version": "1.1.0",
   "description": "",
   "main": "src/main.ts",
   "scripts": {
@@ -9,9 +9,9 @@
   "keywords": [],
   "author": "Pokegali",
   "dependencies": {
-    "chalk": "^3.0.0",
-    "discord-api-types": "^0.35.0",
-    "discord.js": "^14.0.0-dev.1656158629-c4653f9",
-    "ts-node": "^10.8.2"
+    "chalk": "^4.1.2",
+    "discord-api-types": "^0.37.47",
+    "discord.js": "^14.11.0",
+    "ts-node": "^10.9.1"
   }
 }

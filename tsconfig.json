@@ -1,13 +1,12 @@
 {
 	"compilerOptions": {
-		"module": "commonjs",
+		"module": "CommonJS",
 		"noImplicitAny": true,
 		"removeComments": true,
 		"preserveConstEnums": true,
 		"sourceMap": true,
-		"allowJs": true,
+		"allowJs": false,
 		"outDir": "dist",
-		"checkJs": false,
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
 		"incremental": true,
@@ -15,7 +14,9 @@
 		"noEmitOnError": false,
 		"moduleResolution": "node",
 		"skipLibCheck": true,
-		"target": "es2020"
+		"target": "es2020",
+		"noImplicitOverride": true,
+		"strictBindCallApply": true
 	},
 	"include": ["src/**/*.ts"],
 	"exclude": ["node_modules"]

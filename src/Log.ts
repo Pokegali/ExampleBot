@@ -2,18 +2,14 @@ import * as chalk from "chalk";
 
 export default class Log {
 	private readonly cat: string;
-	
+
 	constructor(cat: string) {
 		this.cat = cat;
 	}
 
-	private printDetail(lv: string, msg: string, [c1, c2, c3, c4]: chalk.Chalk[]): void {
-		const date: string = new Date().toLocaleString().replace(",", "");
-		console.log(`${c1(date)} ${c3(lv.padEnd(5))} ${c2(`[${this.cat}]`)} ${c4(msg)}`);
-	}
-
 	private print(lv: string, msg: string, color: chalk.Chalk): void {
-		this.printDetail(lv, msg, [chalk.cyan, color.italic, color.bold, color]);
+		const date: string = new Date().toLocaleString("FR-fr", { timeZone: "Europe/Paris" }).replace(",", "");
+		console.log(`${chalk.cyan(date)} ${color.bold(lv.padEnd(5))} ${color.italic(`[${this.cat}]`)} ${color(msg)}`);
 	}
 
 	error(msg: string): void { this.print("ERROR", msg, chalk.red); }
